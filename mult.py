@@ -48,7 +48,7 @@ async def private_start(message: types.Message):
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=TARGET_CHAT_NAME, url=TARGET_CHAT_LINK)]
     ])
-    await message.answer(f"Բարև!\n\nՈւզու՞մ ես խաղաս։ 👇👇👇", reply_markup=kb)
+    await message.answer(f"Ուզու՞մ ես խաղալ։ 👇👇👇", reply_markup=kb)
 
 
 @dp.message(lambda m: getattr(m.chat, 'type', None) == 'private' and m.text and m.text.startswith('/'))
@@ -56,18 +56,31 @@ async def private_ignore(message: types.Message):
     return
 
 rebus = {
-    "Պինգվինաշեն": {"image": "images/pingvinashen.jpg", "answers": ["Պինգվինաշեն", "Pingvinashen"]},
-    "Արիել": {"image": "images/ariel.jpg", "answers": ["Արիել", "Ariel"]},
+    "Պինգվինաշեն": {"image": "images/pingvinashen.jpg", "answers": ["Պինգվինաշեն"]},
+    "Արիել": {"image": "images/ariel.jpg", "answers": ["Արիել", "Արյել"]},
     "Սառցե սիրտ": {"image": "images/sarcesirty.jpg", "answers": ["Սառցե սիրտը", "Sartce Sirty", "Սառցե սիրտ", "Sartce Sirt"]},
-    "Գեղեցկուհին ու հրեշը": {"image": "images/gexeckuhinuhreshy.jpg", "answers": ["Գեղեցկուհին ու հրեշը", "Gexecukuhin u Hreshy", "Գեղեցկուհին և հրեշը", "Gexecukuhin ev Hreshy"]},
-    "Գտնված երազ": {"image": "images/gtnvaceraz.jpg", "answers": ["Գտնված երազ", "Gtnvac Yeraz"]},
-    "Սպիտակաձյունիկը և յոթ թզուկները": {"image": "images/spitakadzyunik.jpg", "answers": ["Սպիտակաձյունիկը և յոթ թզուկները", "Spitakadzuniky yev Yot Tzuknery", "Spitakadzuniky ev Yot Tzuknery", "Սպիտակաձյունիկ և յոթ թզուկներ", "Spitakadzunik yev Yot Tzukner", "Spitakadzunik ev Yot Tzukner"]},
-    "Փոքրիկ Իշխանը": {"image": "images/poqrikishxan.jpg", "answers": ["Փոքրիկ Իշխանը", "Pokrik Ishxany"]},
-    "Զվերոպոլիս": {"image": "images/zverapolis.jpg", "answers": ["Զվերոպոլիս", "Zveropolis", "Զվերապոլիս", "Zverapolis"]},
-    "Կարմիր գլխարկը": {"image": "images/karmirglxark.jpg", "answers": ["Կարմիր գլխարկը", "Karmir Glxaraky"]},
-    "Բրեմենյան երաժիշտներ": {"image": "images/bremenyanerajishtner.jpg", "answers": ["Բրեմենյան երաժիշտներ", "Bremen Yerazhishtner", "Բրեմենյան երաժիշտները", "Bremen Yerazhishtnery"]},
-    "Վալլի": {"image": "images/valli.jpg", "answers": ["Վալլի", "Valli", "Վալի", "Vali"]},
-    "Դեպի վեր": {"image": "images/depiver.jpg", "answers": ["Դեպի վեր", "Depi Ver"]},
+    "Գեղեցկուհին ու հրեշը": {"image": "images/gexeckuhinuhreshy.jpg", "answers": ["Գեղեցկուհին ու հրեշը", "Գեղեցկուհին և հրեշը"]},
+    "Գտնված երազ": {"image": "images/gtnvaceraz.jpg", "answers": ["Գտնված երազ"]},
+    "Սպիտակաձյունիկը և յոթ թզուկները": {"image": "images/spitakadzyunik.jpg", "answers": ["Սպիտակաձյունիկը և յոթ թզուկները", "Սպիտակաձյունիկ և յոթ թզուկներ","Սպիտակաձյունիկը ևշու յոթ թզուկները", "Սպիտակաձյունիկ ու յոթ թզուկներ"]},
+    "Փոքրիկ Իշխանը": {"image": "images/poqrikishxan.jpg", "answers": ["Փոքրիկ Իշխանը"]},
+    "Զվերոպոլիս": {"image": "images/zverapolis.jpg", "answers": ["Զվերոպոլիս", "Զվերապոլիս"]},
+    "Կարմիր գլխարկը": {"image": "images/karmirglxark.jpg", "answers": ["Կարմիր գլխարկը"]},
+    "Բրեմենյան երաժիշտներ": {"image": "images/bremenyanerajishtner.jpg", "answers": ["Բրեմենյան երաժիշտներ","Բրեմենյան երաժիշտները"]},
+    "Վալլի": {"image": "images/valli.jpg", "answers": ["Վալլի", "Վալի"]},
+    "Դեպի վեր": {"image": "images/depiver.jpg", "answers": ["Դեպի վեր", "Վեր"]},
+    "Կոշկավոր կատուն": {"image": "images/koshkavorkatun.jpg", "answers": ["Կոշկավոր կատու", "Կոշկավոր կատուն"]},
+    "Մադագասկար": {"image": "images/madagaskar.jpg", "answers": ["Մադագասկար"]},
+    "Խաղալիքների պատմություն": {"image": "images/xaxaliqneripatmutyun.jpg", "answers": ["Խաղալիքների պատմություն", "Խաղալիքների պատմությունը"]},
+    "Վինի թուխ": {"image": "images/vinitux.jpg", "answers": ["Վիննի թուխ", "Վինի թուխ", "Վինի պուխ", "Վիննի պուխ"]},
+    "Առյուծ արքան": {"image": "images/simba.jpg", "answers": ["Սիմբա", "Առյուծ արքա", "Առյուծ արքան"]},
+    "Շռեկ": {"image": "images/shrek.jpg", "answers": ["Շրեկ", "Շռեկ"]},
+    "Ռիո": {"image": "images/rio.jpg", "answers": ["Ռիո", "Րիո"]},
+    "Սառցե դարաշրջան": {"image": "images/sarcejamanakashrjan.jpg", "answers": ["Սառցե ժամանակաշրջան", "Սառցե դարաշրջան"]},
+    "Ռատատույ": {"image": "images/ratatuy.jpg", "answers": ["Ռատատույ", "Րատատույ"]},
+    "Ռապունցել": {"image": "images/rapuncel.jpg", "answers": ["Ռապունցել", "Րապունցել"]},
+    "Ռալֆ": {"image": "images/ralf.jpg", "answers": ["Ռալֆ", "Րալֆ"]},
+    "Մոանա": {"image": "images/moana.jpg", "answers": ["Մոանա", "Մուանա", "Մուաննա", "Մոաննա"]},
+    "Մեծ հերոս": {"image": "images/mecheros.jpg", "answers": ["Մեծ հերոս"]},
 }
 
 game_started = False
