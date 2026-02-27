@@ -48,7 +48,7 @@ async def private_start(message: types.Message):
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=TARGET_CHAT_NAME, url=TARGET_CHAT_LINK)]
     ])
-    await message.answer(f"Ուզու՞մ ես խաղալ։ 👇👇👇", reply_markup=kb)
+    await message.answer(f"Բոտի պաշտոնական չատը 👇👇👇", reply_markup=kb)
 
 
 @dp.message(lambda m: getattr(m.chat, 'type', None) == 'private' and m.text and m.text.startswith('/'))
