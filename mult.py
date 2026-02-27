@@ -94,6 +94,8 @@ admin_chat_id = None
 guess_attempts = {}
 remaining_rebus = list(rebus.items())
 current_round_task = None
+# chat where the current game is running; None when no game
+current_game_chat_id = None
 
 def get_player_stats(user_id: int) -> dict:
     session = Session()
@@ -284,7 +286,7 @@ async def update_registration_message(chat_id: int):
         logger.error(f"Reg message error: {e}")
 
 def reset_game_state():
-    global game_started, registration_started, pinned_message_id, correct_rebus, rebus_guessed, current_round_task
+    global game_started, registration_started, pinned_message_id, correct_rebus, rebus_guessed, current_round_task, current_game_chat_id
     game_started = False
     registration_started = False
     players.clear()
@@ -297,6 +299,7 @@ def reset_game_state():
     if current_round_task and not current_round_task.done():
         current_round_task.cancel()
     current_round_task = None
+    current_game_chat_id = None
 
 @dp.message(Command(commands=['game']))
 async def start_registration(message: types.Message):
@@ -394,6 +397,10 @@ async def cmd_start_game(message: types.Message):
         return
     registration_started = False
     game_started = True
+    # remember which chat the game is active in
+    global current_game_chat_id
+    current_game_chat_id = message.chat.id
+
     if pinned_message_id:
         try:
             await bot.unpin_chat_message(message.chat.id)
@@ -464,7 +471,7 @@ async def stop_game(message: types.Message):
 
 
 
-@dp.message(lambda m: game_started and m.from_user.id in players and not m.text.startswith("/") and not m.text.startswith("!"))
+@dp.message(lambda m: game_started and m.chat.id == current_game_chat_id and m.from_user.id in players and not m.text.startswith("/") and not m.text.startswith("!"))
 async def handle_guess(message: types.Message):
     global rebus_guessed
     last = guess_attempts.get(message.from_user.id, 0)
@@ -486,14 +493,15 @@ async def handle_guess(message: types.Message):
             current_round_task.cancel()
         await send_next_round(message)
 
-@dp.message(lambda m: game_started and m.from_user.id not in players and not m.text.startswith("/"))
+@dp.message(lambda m: game_started and m.chat.id == current_game_chat_id and m.from_user.id not in players and not m.text.startswith("/"))
 async def delete_non_player_messages(message: types.Message):
-    """Delete messages from users who are not in the game"""
+    """Delete messages from users who are not in the game (only in the active game chat)"""
     await safe_delete(message)
 
 @dp.message(lambda m: m.text and m.text.startswith("!"))
 async def handle_admin_commands(message: types.Message):
     """Allow admins to use ! commands without restriction, delete non-admin ! commands"""
+    # admins may issue commands anywhere; we don't restrict by chat here
     if not await is_user_admin(message.chat.id, message.from_user.id):
         await safe_delete(message)
 
