@@ -181,10 +181,15 @@ def update_player_stats(user_id: int, is_win: bool = False, points: int = 1):
         if not player:
             player = PlayerStats(user_id=user_id)
             session.add(player)
-        player.games += 1
-        player.points += points
+            # SQLAlchemy may leave default values as None until flush, so initialize here
+            player.games = 0
+            player.wins = 0
+            player.points = 0
+        # guard against nulls in case existing rows have them
+        player.games = (player.games or 0) + 1
+        player.points = (player.points or 0) + points
         if is_win:
-            player.wins += 1
+            player.wins = (player.wins or 0) + 1
         session.commit()
     except Exception as e:
         session.rollback()
@@ -501,7 +506,8 @@ async def finish_game(origin):
     if not scores:
         # no one scored, but still report participants with zero points
         if players:
-            player_list = '\n'.join(f"{await get_user_name(pid)} — {scores.get(pid, 0)}" for pid in players)
+            # build a list to ensure await expressions are executed immediately
+            player_list = '\n'.join([f"{await get_user_name(pid)} — {scores.get(pid, 0)}" for pid in players])
             await bot.send_message(chat_id, f"Խաղն ավարտվեց — ոչ ոք միավոր չհավաքեց։\n\n👥 Մասնակիցներ՝\n{player_list}", parse_mode="HTML")
         else:
             await bot.send_message(chat_id, "Խաղն ավարտվեց — ոչ ոք միավոր չհավաքեց։")
@@ -516,7 +522,7 @@ async def finish_game(origin):
         name = await get_user_name(winners[0])
         text = f"🏆 Հաղթող՝ {name} ({max_score} միավոր)"
     # build full players list with scores
-    player_list = '\n'.join(f"{await get_user_name(pid)} — {scores.get(pid, 0)}" for pid in players)
+    player_list = '\n'.join([f"{await get_user_name(pid)} — {scores.get(pid, 0)}" for pid in players])
     full_text = f"{text}\n\n👥 Մասնակիցներ՝\n{player_list}"
     await bot.send_message(chat_id, full_text, parse_mode="HTML")
 
