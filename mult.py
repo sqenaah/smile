@@ -270,7 +270,7 @@ async def update_registration_message(chat_id: int):
         registered = '\n'.join(registered_lines)
     else:
         registered = ''
-    text = f"🧩 Սմայլ խաղի գրանցում\n\n👤 Մասնակիցներ՝\n{registered or '︎︎ㅤ'}"
+    text = f"<b>🧩 Սմայլ խաղի գրանցում</b>\n\n👤 Մասնակիցներ՝\n{registered or '︎︎ㅤ'}"
     try:
         if pinned_message_id:
             await bot.edit_message_text(text, chat_id=chat_id, message_id=pinned_message_id,
@@ -409,7 +409,7 @@ async def cmd_start_game(message: types.Message):
         pinned_message_id = None
 
     clear_registrations(message.chat.id)
-    await message.answer("Խաղը սկսված է! 🎮\nՄաղթում եմ ձեզ հաճելի խաղ 🫶")
+    await message.answer("<b>Խաղը սկսված է! 🎮</b>\nՄաղթում եմ ձեզ հաճելի մրցութային ժամանց 🫶")
     await send_next_round(message)
 
 async def send_next_round(origin):
