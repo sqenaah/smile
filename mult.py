@@ -94,7 +94,6 @@ admin_chat_id = None
 guess_attempts = {}
 remaining_rebus = list(rebus.items())
 current_round_task = None
-# chat where the current game is running; None when no game
 current_game_chat_id = None
 
 def get_player_stats(user_id: int) -> dict:
@@ -183,11 +182,9 @@ def update_player_stats(user_id: int, is_win: bool = False, points: int = 1):
         if not player:
             player = PlayerStats(user_id=user_id)
             session.add(player)
-            # SQLAlchemy may leave default values as None until flush, so initialize here
             player.games = 0
             player.wins = 0
             player.points = 0
-        # guard against nulls in case existing rows have them
         player.games = (player.games or 0) + 1
         player.points = (player.points or 0) + points
         if is_win:
@@ -397,7 +394,6 @@ async def cmd_start_game(message: types.Message):
         return
     registration_started = False
     game_started = True
-    # remember which chat the game is active in
     global current_game_chat_id
     current_game_chat_id = message.chat.id
 
@@ -413,7 +409,7 @@ async def cmd_start_game(message: types.Message):
         pinned_message_id = None
 
     clear_registrations(message.chat.id)
-    await message.answer("Խաղը սկսվեց! 🎮")
+    await message.answer("Խաղը սկսված է! 🎮\nՄաղթում եմ ձեզ հաճելի խաղ 🫶")
     await send_next_round(message)
 
 async def send_next_round(origin):
@@ -425,12 +421,12 @@ async def send_next_round(origin):
     correct_rebus = rebus_item[0]
     remaining_rebus.remove(rebus_item)
     rebus_guessed = False
-    player_list = '\n'.join([f"{i+1}. {await get_user_name(pid)} — {scores.get(pid, 0)}" for i, pid in enumerate(players)])
+    player_list = '\n'.join([f"{i+1}. {await get_user_name(pid)} - {scores.get(pid, 0)}" for i, pid in enumerate(players)])
     chat_id = origin.chat.id if hasattr(origin, 'chat') else origin
-    await bot.send_message(chat_id, f"👥 Մասնակիցներ:\n{player_list}\n\n🎭 Գուշակիր մուլտֆիլմը:", parse_mode="HTML")
+    await bot.send_message(chat_id, f"👥 Մասնակիցներ:\n{player_list}\n\n👁‍🗨 Ուշադրություն…", parse_mode="HTML")
     await asyncio.sleep(1)
     photo = FSInputFile(rebus_item[1]["image"])
-    await bot.send_photo(chat_id, photo, caption=" 📷 Գուշակեք մուլտֆիլմը 🎬")
+    await bot.send_photo(chat_id, photo, caption=" 📺 Գուշակե՛ք մուլտֆիլմը 📺")
     if current_round_task and not current_round_task.done():
         current_round_task.cancel()
     current_round_task = asyncio.create_task(round_timer(chat_id))
@@ -438,10 +434,14 @@ async def send_next_round(origin):
 async def round_timer(chat_id):
     global rebus_guessed, correct_rebus
     try:
-        await asyncio.sleep(45)
+        await asyncio.sleep(30)
         if not rebus_guessed and correct_rebus:
-            display_answer = ensure_trailing_yoch_display(correct_rebus)
-            await bot.send_message(chat_id, f"⌛ Ժամանակն ավարտվեց!\nՃիշտ պատասխանն է՝ {display_answer}")
+            display_answer = _strip_trailing_yoch(correct_rebus)
+            await bot.send_message(
+                chat_id,
+                f"⌛ Ժամանակն ավարտվեց!\nՃիշտ պատասխանն է՝ <b>{display_answer}</b>",
+                parse_mode="HTML",
+            )
             await send_next_round(chat_id)
     except asyncio.CancelledError:
         pass
@@ -488,7 +488,7 @@ async def handle_guess(message: types.Message):
         rebus_guessed = True
         update_player_stats(message.from_user.id, is_win=True, points=1)
         scores[message.from_user.id] = scores.get(message.from_user.id, 0) + 1
-        await message.reply(f"✅ Ճիշտ է! +1 միավոր — {message.from_user.first_name}")
+        await message.reply(f"✅ Ճիշտ է! +1 միավոր - {message.from_user.first_name}")
         if current_round_task:
             current_round_task.cancel()
         await send_next_round(message)
@@ -501,7 +501,6 @@ async def delete_non_player_messages(message: types.Message):
 @dp.message(lambda m: m.text and m.text.startswith("!"))
 async def handle_admin_commands(message: types.Message):
     """Allow admins to use ! commands without restriction, delete non-admin ! commands"""
-    # admins may issue commands anywhere; we don't restrict by chat here
     if not await is_user_admin(message.chat.id, message.from_user.id):
         await safe_delete(message)
 
@@ -511,27 +510,23 @@ async def finish_game(origin):
     chat_id = origin.chat.id if hasattr(origin, 'chat') else origin
     for pid in players:
         update_player_stats(pid, is_win=False, points=0)
-    if not scores:
-        # no one scored, but still report participants with zero points
         if players:
-            # build a list to ensure await expressions are executed immediately
-            player_list = '\n'.join([f"{await get_user_name(pid)} — {scores.get(pid, 0)}" for pid in players])
-            await bot.send_message(chat_id, f"Խաղն ավարտվեց — ոչ ոք միավոր չհավաքեց։\n\n👥 Մասնակիցներ՝\n{player_list}", parse_mode="HTML")
+            player_list = '\n'.join([f"{await get_user_name(pid)} - {scores.get(pid, 0)}" for pid in players])
+            await bot.send_message(chat_id, f"Խաղն ավարտվեց - ոչ ոք միավոր չհավաքեց։\n\n👥 Մասնակիցներ՝\n{player_list}", parse_mode="HTML")
         else:
-            await bot.send_message(chat_id, "Խաղն ավարտվեց — ոչ ոք միավոր չհավաքեց։")
+            await bot.send_message(chat_id, "Խաղն ավարտվեց - ոչ ոք միավոր չհավաքեց։")
         reset_game_state()
         return
     max_score = max(scores.values())
     winners = [uid for uid, sc in scores.items() if sc == max_score]
     if len(winners) > 1:
         names = ", ".join([await get_user_name(uid) for uid in winners])
-        text = f"🤝 Ոչ-ոքի! Հաղթողներ՝ {names} ({max_score} միավոր)"
+        text = f"🤝 Ոչ-ոքի! Հաղթողներ՝ {names} - {max_score} միավոր"
     else:
         name = await get_user_name(winners[0])
-        text = f"🏆 Հաղթող՝ {name} ({max_score} միավոր)"
-    # build full players list with scores
-    player_list = '\n'.join([f"{await get_user_name(pid)} — {scores.get(pid, 0)}" for pid in players])
-    full_text = f"{text}\n\n👥 Մասնակիցներ՝\n{player_list}"
+        text = f"🏆 Հաղթող՝ {name} - {max_score} միավոր"
+    player_list = '\n'.join([f"{await get_user_name(pid)} - {scores.get(pid, 0)}" for pid in players])
+    full_text = f"{text}\n\n👥 Բոլոր խաղացողները՝\n{player_list}"
     await bot.send_message(chat_id, full_text, parse_mode="HTML")
 
     clear_registrations(chat_id)
