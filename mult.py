@@ -61,13 +61,13 @@ rebus = {
     "Սառցե սիրտ": {"image": "images/sarcesirty.jpg", "answers": ["Սառցե սիրտը", "Sartce Sirty", "Սառցե սիրտ", "Sartce Sirt"]},
     "Գեղեցկուհին ու հրեշը": {"image": "images/gexeckuhinuhreshy.jpg", "answers": ["Գեղեցկուհին ու հրեշը", "Գեղեցկուհին և հրեշը"]},
     "Գտնված երազ": {"image": "images/gtnvaceraz.jpg", "answers": ["Գտնված երազ"]},
-    "Սպիտակաձյունիկը և յոթ թզուկները": {"image": "images/spitakadzyunik.jpg", "answers": ["Սպիտակաձյունիկը և յոթ թզուկները", "Սպիտակաձյունիկ և յոթ թզուկներ","Սպիտակաձյունիկը ևշու յոթ թզուկները", "Սպիտակաձյունիկ ու յոթ թզուկներ"]},
-    "Փոքրիկ Իշխանը": {"image": "images/poqrikishxan.jpg", "answers": ["Փոքրիկ Իշխանը"]},
+    "Սպիտակաձյունիկը և յոթ թզուկները": {"image": "images/spitakadzyunik.jpg", "answers": ["Սպիտակաձյունիկը և յոթ թզուկները", "Սպիտակաձյունիկ և յոթ թզուկներ","Սպիտակաձյունիկը ևշու յոթ թզուկները", "Սպիտակաձյունիկ ու յոթ թզուկներ", "Սպիտակաձյունիկը ու յոթ թզուկները", "Սպիտակաձյունիկն ու յոթ թզուկները"]},
+    "Փոքրիկ Իշխան": {"image": "images/poqrikishxan.jpg", "answers": ["Փոքրիկ Իշխանը"]},
     "Զվերոպոլիս": {"image": "images/zverapolis.jpg", "answers": ["Զվերոպոլիս", "Զվերապոլիս"]},
     "Կարմիր գլխարկը": {"image": "images/karmirglxark.jpg", "answers": ["Կարմիր գլխարկը"]},
     "Բրեմենյան երաժիշտներ": {"image": "images/bremenyanerajishtner.jpg", "answers": ["Բրեմենյան երաժիշտներ","Բրեմենյան երաժիշտները"]},
     "Վալլի": {"image": "images/valli.jpg", "answers": ["Վալլի", "Վալի"]},
-    "Դեպի վեր": {"image": "images/depiver.jpg", "answers": ["Դեպի վեր", "Վեր"]},
+    "Դեպի վեր": {"image": "images/depiver.jpg", "answers": ["Դեպի վեր", "Վեր", "վերև"]},
     "Կոշկավոր կատուն": {"image": "images/koshkavorkatun.jpg", "answers": ["Կոշկավոր կատու", "Կոշկավոր կատուն"]},
     "Մադագասկար": {"image": "images/madagaskar.jpg", "answers": ["Մադագասկար"]},
     "Խաղալիքների պատմություն": {"image": "images/xaxaliqneripatmutyun.jpg", "answers": ["Խաղալիքների պատմություն", "Խաղալիքների պատմությունը"]},
@@ -79,7 +79,7 @@ rebus = {
     "Ռատատույ": {"image": "images/ratatuy.jpg", "answers": ["Ռատատույ", "Րատատույ"]},
     "Ռապունցել": {"image": "images/rapuncel.jpg", "answers": ["Ռապունցել", "Րապունցել"]},
     "Ռալֆ": {"image": "images/ralf.jpg", "answers": ["Ռալֆ", "Րալֆ"]},
-    "Մոանա": {"image": "images/moana.jpg", "answers": ["Մոանա", "Մուանա", "Մուաննա", "Մոաննա"]},
+    "Մուանա": {"image": "images/moana.jpg", "answers": ["Մոանա", "Մուանա", "Մուաննա", "Մոաննա"]},
     "Մեծ հերոս": {"image": "images/mecheros.jpg", "answers": ["Մեծ հերոս"]},
 }
 
@@ -508,26 +508,40 @@ async def finish_game(origin):
     global scores, game_started
     game_started = False
     chat_id = origin.chat.id if hasattr(origin, 'chat') else origin
+
+    # update stats for everyone who played this round regardless of points
     for pid in players:
         update_player_stats(pid, is_win=False, points=0)
+
+    # determine final results
+    if not scores or max(scores.values(), default=0) == 0:
+        # no one scored any points
         if players:
-            player_list = '\n'.join([f"{await get_user_name(pid)} - {scores.get(pid, 0)}" for pid in players])
-            await bot.send_message(chat_id, f"Խաղն ավարտվեց - ոչ ոք միավոր չհավաքեց։\n\n👥 Մասնակիցներ՝\n{player_list}", parse_mode="HTML")
+            player_list = '\n'.join(
+                [f"{await get_user_name(pid)} - {scores.get(pid, 0)}" for pid in players]
+            )
+            text = (
+                "Խաղն ավարտվեց - ոչ ոք միավոր չհավաքեց։"
+                f"\n\n👥 Մասնակիցներ՝\n{player_list}"
+            )
         else:
-            await bot.send_message(chat_id, "Խաղն ավարտվեց - ոչ ոք միավոր չհավաքեց։")
-        reset_game_state()
-        return
-    max_score = max(scores.values())
-    winners = [uid for uid, sc in scores.items() if sc == max_score]
-    if len(winners) > 1:
-        names = ", ".join([await get_user_name(uid) for uid in winners])
-        text = f"🤝 Ոչ-ոքի! Հաղթողներ՝ {names} - {max_score} միավոր"
+            text = "Խաղն ավարտվեց - ոչ ոք միավոր չհավաքեց։"
+        await bot.send_message(chat_id, text, parse_mode="HTML")
     else:
-        name = await get_user_name(winners[0])
-        text = f"🏆 Հաղթող՝ {name} - {max_score} միավոր"
-    player_list = '\n'.join([f"{await get_user_name(pid)} - {scores.get(pid, 0)}" for pid in players])
-    full_text = f"{text}\n\n👥 Բոլոր խաղացողները՝\n{player_list}"
-    await bot.send_message(chat_id, full_text, parse_mode="HTML")
+        # somebody has points, compute winners
+        max_score = max(scores.values())
+        winners = [uid for uid, sc in scores.items() if sc == max_score]
+        if len(winners) > 1:
+            names = ", ".join([await get_user_name(uid) for uid in winners])
+            text = f"🤝 Ոչ-ոքի! Հաղթողներ՝ {names} - {max_score} միավոր"
+        else:
+            name = await get_user_name(winners[0])
+            text = f"🏆 Հաղթող՝ {name} - {max_score} միավոր"
+        player_list = '\n'.join(
+            [f"{await get_user_name(pid)} - {scores.get(pid, 0)}" for pid in players]
+        )
+        full_text = f"{text}\n\n👥 Բոլոր խաղացողները՝\n{player_list}"
+        await bot.send_message(chat_id, full_text, parse_mode="HTML")
 
     clear_registrations(chat_id)
     reset_game_state()
