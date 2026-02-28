@@ -409,7 +409,7 @@ async def cmd_start_game(message: types.Message):
         pinned_message_id = None
 
     clear_registrations(message.chat.id)
-    await message.answer("<b>Խաղը սկսված է! 🎮</b>\nՄաղթում եմ ձեզ հաճելի մրցութային ժամանց 🫶")
+    await message.answer("Խաղը սկսված է! 🎮\n\nՄաղթում ենք ձեզ հաճելի մրցութային ժամանց 🫶")
     await send_next_round(message)
 
 async def send_next_round(origin):
